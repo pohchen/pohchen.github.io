@@ -83,7 +83,7 @@ const contract = new window.web3.eth.Contract(contractABI, contractAddress)
 
 // Bet function
 async function bet() {
-  const amount = value: web3.utils.toWei("0.0005", "ether")  // document.getElementById('amount').value
+  const amount = web3.utils.toWei("0.0005", "ether")  // document.getElementById('amount').value
   const options = { from: userAccount, value: amount }
   contract.methods.bet(amount).send(options, (error, result) => {
     if (error) {
