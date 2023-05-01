@@ -75,8 +75,11 @@ const contractABI = [
 ]
 
 // 取得使用者帳戶
-const accounts = web3.eth.getAccounts();
-const userAccount = accounts[0];
+let userAccounts = []
+async function getUserAccounts() {
+  userAccounts = await web3.eth.getAccounts()
+}
+getUserAccounts()
 
 // Instantiate contract object
 const contract = new window.web3.eth.Contract(contractABI, contractAddress)
@@ -84,7 +87,7 @@ const contract = new window.web3.eth.Contract(contractABI, contractAddress)
 // Bet function
 async function bet() {
   const amount = web3.utils.toWei("0.0005", "ether")  // document.getElementById('amount').value
-  const options = { from: userAccount, value: amount }
+  const options = { from: userAccounts[0], value: amount }
   contract.methods.bet(amount).send(options, (error, result) => {
     if (error) {
       console.error(error)
@@ -98,13 +101,13 @@ async function bet() {
 
 // getBalance function
 async function getBalance() {
-  const balance = await contract.methods.getBalance().call({ from: userAccount });
+  const balance = await contract.methods.getBalance().call({ from: userAccounts[0] });
   console.log('Your balance is ${web3.utils.fromWei(balance, "ether")} ETH');
 }
 
 // getByOwner function
 async function getByOwner() {
-  const balance = await contract.methods.get().send({ from: userAccount });
+  const balance = await contract.methods.get().send({ from: userAccounts[0] });
   console.log('Your balance is ${web3.utils.fromWei(balance, "ether")} ETH');
 }
   
