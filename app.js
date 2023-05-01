@@ -11,7 +11,7 @@ window.addEventListener('load', async () => {
 })
 
 // Contract address and ABI
-const contractAddress = '0x1234567890abcdef1234567890abcdef12345678'
+const contractAddress = '0x4b3C45f25aBd6a1B6D7e63e7bc3499E8bc06444b'
 const contractABI = [
   {
     "constant": false,
