@@ -87,7 +87,7 @@ async function getUserAccounts() {
 getUserAccounts()
 
 // Instantiate contract object
-const contract = new window.web3.eth.Contract(contractABI, contractAddress)
+const contractInstance = new window.web3.eth.Contract(contractABI, contractAddress)
 
 async function bet(amount) {
   const accounts = await web3.eth.getAccounts();
