@@ -75,7 +75,7 @@ const contractABI = [
 ]
 
 // 取得使用者帳戶
-const accounts = await web3.eth.getAccounts();
+const accounts = web3.eth.getAccounts();
 const userAccount = accounts[0];
 
 // Instantiate contract object
