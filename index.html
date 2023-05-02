@@ -1,22 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Web3.js Example</title>
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.5.0/dist/web3.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Ethereum Web3 Example</title>
 </head>
 <body>
-  <script src="./app.js"></script>
-  <h1>Web3.js Example</h1>
-  <form>
-    <label for="amount">Amount:</label>
-    <input type="number" id="amount" name="amount">
-    <button type="button" onclick="bet()">Bet</button><br/>
-    <button type="button" onclick="getBalance()">getBalance</button><br/>
-    <button type="button" onclick="getByOwner()">getByOwner</button>
-  </form>
-  <div id="message"></div>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Ethereum Web3 Example</a>
+            <div class="navbar-collapse">
+                <div class="navbar-nav ml-auto">
+                    <span class="nav-item nav-link" id="account"></span>
+                </div>
+            </div>
+        </nav>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h2>Invest</h2>
+                <div class="input-group mb-3">
+                    <input type="number" id="amount" class="form-control" placeholder="Amount (ETH)" step=0.00000001>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" onclick="invest()">Invest</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h2>Check Investment</h2>
+                <button class="btn btn-primary" onclick="checkInvestment()">Check Investment</button>
+                <div id="investment" class="mt-2"></div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h2>Withdraw</h2>
+                <button class="btn btn-primary mb-2" onclick="withdraw()">Withdraw (admin only)</button>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+   
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script>
+        const contractABI = const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"bet","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"get","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balances","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
+        const contractAddress = "0x4b3C45f25aBd6a1B6D7e63e7bc3499E8bc06444b";
+        const adminAddress = "0xfF2c5C74B24E7b6B5A7cd20E8803E5d89aBAd07D";
 
+        let web3;
+        let contract;
+        let userAddress;
+
+        async function init() {
+            if (typeof window.ethereum !== "undefined") {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+                    userAddress = await web3.eth.getCoinbase();
+                    document.getElementById("account").innerHTML = `Connected: ${userAddress}`;
+
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+                } catch (err) {
+                    console.error("User denied account access");
+                }
+            } else {
+                console.error("No web3 provider detected. Please install MetaMask.");
+            }
+        }
+
+        async function invest() {
+            const amount = document.getElementById("amount").value;
+            const weiAmount = web3.utils.toWei(amount, "ether");
+
+            await contract.methods.invest().send({ from: userAddress, value: weiAmount });
+        }
+
+        async function checkInvestment() {
+            const investment = await contract.methods.checkInvestment().call({ from: userAddress });
+            const etherAmount = web3.utils.fromWei(investment, "ether");
+            document.getElementById("investment").innerText = `Your current investment: ${etherAmount} ETH`;
+        }
+
+        async function withdraw() {
+            if (userAddress.toLowerCase() === adminAddress.toLowerCase()) {
+                await contract.methods.withdraw().send({ from: userAddress });
+            } else {
+                alert("Only the admin can withdraw.");
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+   
 </body>
 </html>
