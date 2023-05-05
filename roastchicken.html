@@ -1,137 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roast Chicken Game</title>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="./node_modules/web3/dist/web3.min.js"></script>
-<script>
-const Web3 = require('web3');
-const roastChickenGameABI = YOUR_GENERATED_ABI; // Replace with the ABI of RoastChickenGame contract
-
-const contractAddress = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; // Replace with your deployed contract address
-let web3, accounts, game;
-
-async function approve() {
-    const chickenTokenAddress = "YOUR_CHICKEN_TOKEN_CONTRACT_ADDRESS"; // Replace with your chicken token contract address
-    const chickenToken = new web3.eth.Contract(ERC20_ABI, chickenTokenAddress);
-    await chickenToken.methods.approve(contractAddress, APPROVE_AMOUNT.toString()).send({ from: accounts[0] });
-    alert("Token approved for RoastChickenGame contract");
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roast Chicken Game</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <script>
     
-async function setupWeb3() {
-    if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
-        try {
+    const CONTRACT_ADDRESS = "YOUR_ROAST_CHICKEN_GAME_CONTRACT_ADDRESS"; // Replace with your RoastChickenGame contract address
+    const CHICKEN_TOKEN_ADDRESS = "YOUR_CHICKEN_TOKEN_CONTRACT_ADDRESS"; // Replace with your ChickenToken contract address
+
+    let web3;
+    let accounts;
+    let chickenGameContract;
+    let chickenTokenContract;
+    let refreshTimeout;
+
+    async function initWeb3() {
+        if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
             await window.ethereum.enable();
-        } catch (error) {
-            console.error("User denied access to Metamask");
-            return;
-        }
-    } else {
-        console.error("Please install Metamask");
-        return;
-    }
-
-    accounts = await web3.eth.getAccounts();
-    game = new web3.eth.Contract(roastChickenGameABI, contractAddress);
-}
-
-async function invest() {
-    const chickens = parseInt(document.getElementById("chickenNum").value);
-    const roastTimeHours = parseInt(document.getElementById("roastTimeHours").value);
-    const cost = chickens * 1; // Calculate the actual cost in USDT based on your conversion rate
-
-    await game.methods.invest(chickens, roastTimeHours).send({ from: accounts[0] });
-    alert("Investment sent");
-}
-async function getStatus() {
-    const player = await game.methods.players(accounts[0]).call();
-    const canSteal = await canStealChickenFrom();
-
-    const statusElement = document.getElementById("status");
-    const canStealElement = document.getElementById("canSteal");
-
-    statusElement.innerText = `Chickens: ${player.chickens}, Start time: ${new Date(player.startTime * 1000)}, Finish time: ${new Date(player.finishTime * 1000)}`;
-    canStealElement.innerText = canSteal ? 'You can steal a chicken' : 'Cannot steal at the moment';
-}
-
-async function fetchGamePlayers() {
-    const gamePlayersCount = await game.methods.gamePlayers().call();
-    let gamePlayers = [];
-    for (let i = 0; i < gamePlayersCount; i++) {
-        const playerAddress = await game.methods.gamePlayers(i).call();
-        gamePlayers.push(playerAddress);
-    }
-    return gamePlayers;
-}
-
-async function canStealChickenFrom() {
-    // Assuming there's a list of players in the game, you'll have to fetch it based on your contract's logic
-    const gamePlayers = await fetchGamePlayers();
-
-    for (let i = 0; i < gamePlayers.length; i++) {
-        const playerAddress = gamePlayers[i];
-        if (playerAddress === accounts[0]) continue;
-
-        const targetPlayer = await game.methods.players(playerAddress).call();
-
-        if (block.timestamp >= targetPlayer.startTime &&
-            block.timestamp <= targetPlayer.finishTime) {
-            return true;
+        } else {
+            console.error("No web3 provider detected");
         }
     }
 
-    return false;
-}
+    async function initContracts() {
+        // RoastChickenGame contract
+        const gameABI = []; // Add game ABI JSON array here
+        chickenGameContract = new web3.eth.Contract(gameABI, CONTRACT_ADDRESS);
 
+        // ChickenToken contract
+        const tokenABI = []; // Add token ABI JSON array here
+        chickenTokenContract = new web3.eth.Contract(tokenABI, CHICKEN_TOKEN_ADDRESS);
+    }
+
+    async function connectWallet() {
+        accounts = await web3.eth.getAccounts();
+        console.log("Connected account:", accounts[0]);
+
+        // Start listening to user's account changes
+        await getRoastingStatus();
+        updateRefreshInterval();
+    }
+
+    async function checkApproval() {
+        const allowance = await chickenTokenContract.methods
+            .allowance(accounts[0], CONTRACT_ADDRESS)
+            .call();
+        return allowance !== "0";
+    }
+
+    async function approve() {
+        await chickenTokenContract.methods
+            .approve(CONTRACT_ADDRESS, web3.utils.toWei("1000000000", "ether"))
+            .send({ from: accounts[0] });
+    }
+
+    async function invest() {
+        const approved = await checkApproval();
+        if (!approved) {
+            await approve();
+        }
+        const chickenAmount = document.getElementById("chickens").value;
+        const roastTime = document.getElementById("roastTime").value;
+
+        const requiredEth = chickenAmount * (10 ** 14);
+
+        await chickenGameContract.methods
+            .invest(chickenAmount, roastTime)
+            .send({ from: accounts[0], value: requiredEth });
+    }
+
+    async function getRoastingStatus() {
+        const playersList = document.getElementById("playersList");
+        const players = await chickenGameContract.methods.getPlayers().call();
+
+        playersList.innerHTML = "";
+        for (let p of players) {
+            const player = await chickenGameContract.methods.players(p).call();
+            const canSteal = await chickenGameContract.methods.checkPlayerCanSteal(p).call();
+
+            const listItem = document.createElement("li");
+            listItem.classList.add("list-group-item");
+            listItem.innerText = `Address: ${p} - Chickens: ${player.chickens} - Roasting: ${player.startTime} -> ${player.finishTime}`;
+            const stealButton = document.createElement("button");
+            stealButton.disabled = !canSteal;
+            stealButton.onclick = () => steal(p);
+            stealButton.innerText = "Steal";
+            stealButton.classList.add("btn", "btn-danger", "float-right");
+            listItem.appendChild(stealButton);
+            playersList.appendChild(listItem);
+        }
+    }
+
+    async function steal(targetAddress) {
+        await chickenGameContract.methods.stealFrom(targetAddress).send({ from: accounts[0] });
+        await getRoastingStatus();
+    }
+
+    async function harvest() {
+        await chickenGameContract.methods.harvest().send({ from: accounts[0] });
+    }
+
+    async function redeem() {
+        const chickenAmount = document.getElementById("redeemChickens").value;
+        await chickenGameContract.methods.redeemChickensForEth(chickenAmount).send({ from: accounts[0] });
+    }
+
+    function updateRefreshInterval() {
+        const refreshInterval = document.getElementById("refreshInterval").value;
+
+        clearInterval(refreshTimeout);
+        refreshTimeout = setInterval(getRoastingStatus, refreshInterval * 1000);
+    }
+
+    (async () => {
+        await initWeb3();
+        await initContracts();
+    })();   
     
-</script>
+    </script>
 </head>
-
-<body>
-<div class="container">
-    <h1 class="text-center">Roast Chicken Game</h1>
-    <button onclick="setupWeb3()" class="btn btn-primary btn-block">Connect to Metamask</button>
-    <button id="approveButton" onclick="approve()" class="btn btn-primary btn-block">Approve Token Usage</button>
+<body class="p-5">
+    <h1 class="mb-5">Roast Chicken Game</h1>
+    <button id="connectButton" onclick="connectWallet()" class="btn btn-primary mb-5">Connect Wallet</button>
     <hr>
-    <h2 class="text-center">Investment</h2>
-    <div class="row">
-        <div class="col">
-            <label for="chickenNum">Number of Chickens:</label>
-            <input type="number" id="chickenNum" name="chickenNum" class="form-control" min="10" placeholder="Min. 10" required>
-        </div>
-        <div class="col">
-            <label for="roastTimeHours">Roast Time (Hours):</label>
-            <input type="number" id="roastTimeHours" name="roastTimeHours" class="form-control" min="1" max="10" value="1" required>
-        </div>
-    </div>
-    <button onclick="invest()" class="btn btn-success btn-block mt-2">Invest (Buy Chickens)</button>
+    <h3>Invest in Roasting Chickens</h3>
+    <label for="chickens">Number of Chickens:</label>
+    <input type="number" id="chickens" name="chickens" min="10" value="10">
+    <br>
+    <label for="roastTime">Roast Time (in hours):</label>
+    <input type="number" id="roastTime" name="roastTime" min="1" max="10" value="1">
+    <br>
+    <button id="investButton" onclick="invest()" class="btn btn-success btn-block mt-3">Invest</button>
     <hr>
-    <h2 class="text-center">Game Actions</h2>
-    <div class="row">
-        <div class="col">
-            <button class="btn btn-info btn-block">Harvest</button>
-        </div>
-        <div class="col">
-            <button class="btn btn-danger btn-block">Steal</button>
-        </div>
-    </div>
-</div>
-<script>
-    function updateStatus() {
-        getStatus();
-        setTimeout(updateStatus, 1000 * 60); // Refresh the status in every minute
-    }
-    window.onload = function() {
-        updateStatus();
-    };
-</script>
+    <h3>Active Roasting</h3>
+    <ul id="playersList" class="list-group mb-4"></ul>
+    <span>Auto-refresh interval:</span>
+    <select id="refreshInterval" onchange="updateRefreshInterval()">
+        <option value="5">5 seconds</option>
+        <option value="10">10 seconds</option>
+        <option value="30">30 seconds</option>
+        <option value="60">1 minute</option>
+    </select>
+    <hr>
+    <h3>Harvest Chickens</h3>
+    <button id="harvestButton" onclick="harvest()" class="btn btn-success btn-block">Harvest Chickens</button>
+    <hr>
+    <h3>Redeem Chickens for ETH</h3>
+    <label for="redeemChickens">Number of Chickens to Redeem:</label>
+    <input type="number" id="redeemChickens" name="redeemChickens" min="1" value="1">
+    <br>
+    <button id="redeemButton" onclick="redeem()" class="btn btn-warning btn-block mt-3">Redeem Chickens for ETH</button>
+    <script src="app.js"></script>
 </body>
-
 </html>
