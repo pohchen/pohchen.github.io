@@ -17,6 +17,13 @@ const roastChickenGameABI = YOUR_GENERATED_ABI; // Replace with the ABI of Roast
 const contractAddress = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; // Replace with your deployed contract address
 let web3, accounts, game;
 
+async function approve() {
+    const chickenTokenAddress = "YOUR_CHICKEN_TOKEN_CONTRACT_ADDRESS"; // Replace with your chicken token contract address
+    const chickenToken = new web3.eth.Contract(ERC20_ABI, chickenTokenAddress);
+    await chickenToken.methods.approve(contractAddress, APPROVE_AMOUNT.toString()).send({ from: accounts[0] });
+    alert("Token approved for RoastChickenGame contract");
+}
+    
 async function setupWeb3() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
@@ -91,6 +98,7 @@ async function canStealChickenFrom() {
 <div class="container">
     <h1 class="text-center">Roast Chicken Game</h1>
     <button onclick="setupWeb3()" class="btn btn-primary btn-block">Connect to Metamask</button>
+    <button id="approveButton" onclick="approve()" class="btn btn-primary btn-block">Approve Token Usage</button>
     <hr>
     <h2 class="text-center">Investment</h2>
     <div class="row">
