@@ -54,9 +54,19 @@ async function getStatus() {
     canStealElement.innerText = canSteal ? 'You can steal a chicken' : 'Cannot steal at the moment';
 }
 
+async function fetchGamePlayers() {
+    const gamePlayersCount = await game.methods.gamePlayers().call();
+    let gamePlayers = [];
+    for (let i = 0; i < gamePlayersCount; i++) {
+        const playerAddress = await game.methods.gamePlayers(i).call();
+        gamePlayers.push(playerAddress);
+    }
+    return gamePlayers;
+}
+
 async function canStealChickenFrom() {
     // Assuming there's a list of players in the game, you'll have to fetch it based on your contract's logic
-    const gamePlayers = [...];
+    const gamePlayers = await fetchGamePlayers();
 
     for (let i = 0; i < gamePlayers.length; i++) {
         const playerAddress = gamePlayers[i];
@@ -73,6 +83,7 @@ async function canStealChickenFrom() {
     return false;
 }
 
+    
 </script>
 </head>
 
