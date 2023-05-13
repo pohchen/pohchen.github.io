@@ -19,7 +19,9 @@
 
 
     async function initWeb3() {
+        console.log('pohan test 0');
         if (typeof window.ethereum !== "undefined") {
+            console.log('pohan test 1');
             web3 = new Web3(window.ethereum);
             try {
                 await window.ethereum.request({ method: "eth_requestAccounts" });
