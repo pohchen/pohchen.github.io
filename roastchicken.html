@@ -659,11 +659,9 @@
         clearInterval(refreshTimeout);
         refreshTimeout = setInterval(getRoastingStatus, refreshInterval * 1000);
     }
-
-    (async () => {
-        await initWeb3();
-        await updateRoastStatus();
-    })();   
+  
+    window.addEventListener("DOMContentLoaded", initWeb3);
+    window.addEventListener("DOMContentLoaded", updateRoastStatus);
     
     </script>
 </head>
