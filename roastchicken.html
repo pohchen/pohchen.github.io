@@ -17,12 +17,21 @@
     let chickenTokenContract;
     let refreshTimeout;
 
+
     async function initWeb3() {
-        if (window.ethereum) {
+        if (typeof window.ethereum !== "undefined") {
             web3 = new Web3(window.ethereum);
-            await window.ethereum.enable();
+            try {
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                accounts = await web3.eth.getAccounts();
+                console.log("Connected account:", accounts[0]);
+                document.getElementById("account").innerHTML = `Connected: ${accounts[0]}`;
+
+            } catch (err) {
+                console.error("User denied account access");
+            }
         } else {
-            console.error("No web3 provider detected");
+            console.error("No web3 provider detected. Please install MetaMask.");
         }
     }
 
@@ -574,10 +583,7 @@
         chickenTokenContract = new web3.eth.Contract(tokenABI, CHICKEN_TOKEN_ADDRESS);
     }
 
-    async function connectWallet() {
-        accounts = await web3.eth.getAccounts();
-        console.log("Connected account:", accounts[0]);
-
+    async function updateRoastStatus() {
         // Start listening to user's account changes
         await getRoastingStatus();
         updateRefreshInterval();
@@ -656,14 +662,26 @@
 
     (async () => {
         await initWeb3();
-        await initContracts();
+        await updateRoastStatus();
     })();   
     
     </script>
 </head>
 <body class="p-5">
     <h1 class="mb-5">Roast Chicken Game</h1>
-    <button id="connectButton" onclick="connectWallet()" class="btn btn-primary mb-5">Connect Wallet</button>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Ethereum Web3 Example</a>
+            <div class="navbar-collapse">
+                <div class="navbar-nav ml-auto">
+                     <button id="connectButton" onclick="connectWallet()" class="btn btn-primary mb-5">Connect Wallet</button>
+                    <span class="nav-item nav-link" id="account"></span>
+                </div>
+            </div>
+        </nav>
+    </div>
+    
+    
     <hr>
     <h3>Invest in Roasting Chickens</h3>
     <label for="chickens">Number of Chickens:</label>
