@@ -24,7 +24,6 @@
                 await window.ethereum.request({ method: "eth_requestAccounts" });
                 accounts = await web3.eth.getAccounts();
                 console.log("Connected account:", accounts[0]);
-                alert("Connected account:", accounts[0]);
                 document.getElementById("account").innerHTML = `Connected: ${accounts[0]}`;
 
             } catch (err) {
@@ -662,7 +661,7 @@
   
     (async () => {
         await initWeb3();
-        await updateRoastStatus();
+       // await updateRoastStatus();
     })();
     
     </script>
