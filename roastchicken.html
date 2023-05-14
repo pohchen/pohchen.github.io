@@ -114,7 +114,6 @@
     async function checkApproval() {
         const allowance = await chickenTokenContract.methods
             .allowance(accounts[0], CONTRACT_ADDRESS);
-        alert('checkApproval'+allowance);
         return allowance !== "0";
     }
 
@@ -126,7 +125,6 @@
 
     async function invest() {
         const approved = await checkApproval();
-        alert('approved'+ approved);
         if (!approved) {
             await approve();
         }
@@ -135,10 +133,15 @@
         const roastTime = document.getElementById("roastTime").value;
 
         const requiredEth = chickenAmount * (10 ** 14);
+        
+        if (chickenAmount < 10) {
+            alert('Chicken must invest at least 10');
+        } else {
+            await chickenGameContract.methods
+                .invest(chickenAmount, roastTime)
+                .send({ from: accounts[0], value: requiredEth });
+        }
 
-        await chickenGameContract.methods
-            .invest(chickenAmount, roastTime)
-            .send({ from: accounts[0], value: requiredEth });
     }
 
     async function getRoastingStatus() {
