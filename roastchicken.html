@@ -592,6 +592,7 @@
         const allowance = await chickenTokenContract.methods
             .allowance(accounts[0], CONTRACT_ADDRESS)
             .call();
+        alert('allowance'+allowance);
         return allowance !== "0";
     }
 
@@ -610,6 +611,9 @@
         const roastTime = document.getElementById("roastTime").value;
 
         const requiredEth = chickenAmount * (10 ** 14);
+        
+        alert('chickenAmount'+chickenAmount);
+        alert('roastTime'+roastTime);
 
         await chickenGameContract.methods
             .invest(chickenAmount, roastTime)
