@@ -50,76 +50,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    
+    
    
     <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script src="contract.js"></script>
+    
     <script>
-        const contractABI = [
-            {
-                "inputs": [],
-                "name": "invest",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "inputs": [],
-                "name": "withdraw",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "checkInvestment",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "investments",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "owner",
-                "outputs": [
-                    {
-                        "internalType": "address payable",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            }
-        ];
-      
+     
         const CONTRACT_ADDRESS = "0xeb37B8654da26a94E4A538b6DA3125aE93ceBBeF"; // Replace with your RoastChickenGame contract address
         const CHICKEN_TOKEN_ADDRESS = "0x8310f4a64B7D0c345B932B4dC43d516A45d930D0"; // Replace with your ChickenToken contract address
       
@@ -129,6 +67,9 @@
         let web3;
         let contract;
         let userAddress;
+        
+        let chickenGameContract;
+        let chickenTokenContract;
 
         async function init() {
             if (typeof window.ethereum !== "undefined") {
@@ -147,11 +88,32 @@
             }
         }
 
-        async function invest() {
-            const amount = document.getElementById("amount").value;
-            const weiAmount = web3.utils.toWei(amount, "ether");
+        async function checkApproval() {
+            const allowance = await chickenTokenContract.methods
+                .allowance(userAddress, CONTRACT_ADDRESS)
+                .call();
+            return allowance !== "0";
+        }
 
-            await contract.methods.invest().send({ from: userAddress, value: weiAmount });
+        async function approve() {
+            await chickenTokenContract.methods
+                .approve(CONTRACT_ADDRESS, web3.utils.toWei("1000000000", "ether"))
+                .send({ from: userAddress });
+        }
+        
+        async function invest() {
+            const approved = await checkApproval();
+            if (!approved) {
+                await approve();
+            }
+            const chickenAmount = document.getElementById("chickens").value;
+            const roastTime = document.getElementById("roastTime").value;
+
+            const requiredEth = chickenAmount * (10 ** 14);
+
+            await chickenGameContract.methods
+                .invest(chickenAmount, roastTime)
+                .send({ from: userAddress, value: requiredEth });
         }
 
         async function checkInvestment() {
