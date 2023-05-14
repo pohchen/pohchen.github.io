@@ -76,7 +76,6 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
 
     <script>
-    console.error('pohan test 222');
     const CONTRACT_ADDRESS = "0xeb37B8654da26a94E4A538b6DA3125aE93ceBBeF"; // Replace with your RoastChickenGame contract address
     const CHICKEN_TOKEN_ADDRESS = "0x8310f4a64B7D0c345B932B4dC43d516A45d930D0"; // Replace with your ChickenToken contract address
 
@@ -113,15 +112,16 @@
     }
 
     async function checkApproval() {
+        alert('checkApproval enter');
         const allowance = await chickenTokenContract.methods
             .allowance(accounts[0], CONTRACT_ADDRESS)
             .call();
-        console.log('checkApproval'+allowance);
+        alert('checkApproval'+allowance);
         return allowance !== "0";
     }
 
     async function approve() {
-        console.log('approve start');
+        alert('approve start');
         await chickenTokenContract.methods
             .approve(CONTRACT_ADDRESS, web3.utils.toWei("0.00001", "ether"))
             .send({ from: accounts[0] });
