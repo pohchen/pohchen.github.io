@@ -660,13 +660,12 @@
         const allowance = await chickenTokenContract.methods
             .allowance(accounts[0], CONTRACT_ADDRESS)
             .call();
-        // alert('allowance'+allowance);
         return allowance !== "0";
     }
 
     async function approve() {
         await chickenTokenContract.methods
-            .approve(CONTRACT_ADDRESS, web3.utils.toWei("1000000000", "ether"))
+            .approve(CONTRACT_ADDRESS, web3.utils.toWei("0.00001", "ether"))
             .send({ from: accounts[0] });
     }
 
@@ -679,9 +678,6 @@
         const roastTime = document.getElementById("roastTime").value;
 
         const requiredEth = chickenAmount * (10 ** 14);
-        
-        // alert('chickenAmount'+chickenAmount);
-        // alert('roastTime'+roastTime);
 
         await chickenGameContract.methods
             .invest(chickenAmount, roastTime)
