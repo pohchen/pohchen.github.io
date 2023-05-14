@@ -112,18 +112,15 @@
     }
 
     async function checkApproval() {
-        alert('checkApproval enter');
         const allowance = await chickenTokenContract.methods
-            .allowance(accounts[0], CONTRACT_ADDRESS)
-            .call();
+            .allowance(accounts[0], CONTRACT_ADDRESS);
         alert('checkApproval'+allowance);
         return allowance !== "0";
     }
 
     async function approve() {
-        alert('approve start');
         await chickenTokenContract.methods
-            .approve(CONTRACT_ADDRESS, web3.utils.toWei("0.00001", "ether"))
+            .approve(CONTRACT_ADDRESS, web3.utils.toWei("100000", "ether"))
             .send({ from: accounts[0] });
     }
 
